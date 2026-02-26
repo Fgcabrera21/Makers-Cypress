@@ -123,12 +123,6 @@ Escenarios de prueba, casos de prueba, reportes de bugs de ejemplo, técnicas y 
 - PUT y PATCH: actualización completa y parcial
 - DELETE: 204
 
-## Comandos para documentar pasos
-
-**Módulo 1 (E2E con UI):**
-```javascript
-cy.step('nombre_paso', 'Descripción legible para no-QA');
-```
 
 **Módulo 3 (API):**
 ```javascript
