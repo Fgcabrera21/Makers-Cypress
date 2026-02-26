@@ -1,0 +1,32 @@
+{
+  "name": "makers-cypress",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "start-server-and-test mock:api http://localhost:4545/api/users test:run",
+    "test:run": "cypress run --browser edge",
+    "test:smoke": "cypress run --spec cypress/e2e/smoke-login.cy.js --browser edge",
+    "test:open": "cypress open",
+    "test:headed": "cypress run --headed",
+    "test:chrome": "cypress run --browser chrome",
+    "test:login": "cypress run --spec cypress/e2e/smoke-login.cy.js",
+    "test:api": "node scripts/run-api-tests.js",
+    "test:api:run": "cypress run --spec cypress/e2e/api/reqres-users.cy.js --browser edge",
+    "mock:api": "node server/mock-reqres.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "cypress": "^15.11.0",
+    "cypress-mochawesome-reporter": "^3.8.4",
+    "express": "^5.2.1",
+    "marge": "^1.0.1",
+    "mochawesome": "^7.1.4",
+    "mochawesome-merge": "^4.4.1",
+    "pdf-lib": "^1.17.1",
+    "start-server-and-test": "^2.1.5"
+  }
+}
