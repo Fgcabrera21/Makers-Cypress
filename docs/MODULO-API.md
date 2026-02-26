@@ -1,10 +1,21 @@
-# Módulo API - ReqRes.in
+# Módulo 3 - API ReqRes.in
+
+Documentación del tercer módulo de la Prueba Técnica Makers: pruebas funcionales sobre la API compatible con https://reqres.in/api/
+
+## Ubicación en el proyecto
+
+| Elemento | Ruta |
+|----------|------|
+| Tests | `cypress/e2e/api/reqres-users.cy.js` |
+| Mock API | `server/mock-reqres.js` |
+| Runner (evita wmic) | `scripts/run-api-tests.js` |
+| Comando `requestAndRecord` | `cypress/support/commands.js` |
+| Task `recordApiStep` | `cypress/plugins/report-plugin.js` |
+| Generador PDF (pasos API) | `cypress/utils/pdf-report-generator.js` |
 
 ## Alcance
 
-Pruebas funcionales para la API compatible con https://reqres.in/api/ según la Prueba Técnica Makers.
-
-**Implementación profesional:** Se usa un mock local (`server/mock-reqres.js`) que replica el contrato de ReqRes, evitando bloqueos por Cloudflare (403) en entornos headless/CI.
+Se usa un **mock local** (`server/mock-reqres.js`) que replica el contrato de ReqRes.in. Así se evita el bloqueo 403 de Cloudflare en entornos headless/CI. Los tests se ejecutan contra `http://localhost:4545/api`.
 
 ## Requisitos cumplidos
 
@@ -18,35 +29,90 @@ Pruebas funcionales para la API compatible con https://reqres.in/api/ según la 
 | 6 | Verificar que nombre y trabajo coincidan con el POST | ✅ |
 | 7 | Casos de prueba adicionales | ✅ |
 
-## Casos adicionales implementados
+## Casos de prueba implementados
 
-- **GET /users** - Listado paginado (page=1, page=2)
-- **GET /users/1** - Usuario existente (200)
-- **GET /users/23** - Usuario inexistente (404)
-- **POST** con payload vacío y con campos personalizados
-- **PUT /users/2** - Actualización completa
-- **PATCH /users/2** - Actualización parcial
-- **DELETE /users/2** - Eliminación (204)
+### Flujo principal
+- POST /users - Crear usuario y verificar 201
+- GET /users/{id} - Consultar usuario creado con ID del POST
+- Flujo completo: POST 201 → extraer ID → GET 200 y validar name/job
 
-## Arquitectura
+### GET /users
+- Listar usuarios página 1 (200)
+- Paginación (page=2)
+- Usuario existente /users/1 (200)
+- Usuario inexistente /users/23 (404)
 
-```
-server/mock-reqres.js   → Mock Express que replica ReqRes
-cypress/e2e/api/        → Tests contra localhost:4545
-```
+### POST /users
+- Payload vacío - Validar manejo
+- Campos personalizados
+
+### PUT y PATCH
+- PUT /users/2 - Actualización completa
+- PATCH /users/2 - Actualización parcial
+
+### DELETE
+- DELETE /users/2 - Eliminación (204)
+
+## Reportes del Módulo API
+
+Cada test API genera un **PDF** en `test-results/pdf-reports/` con:
+
+- Portada: "ReqRes.in API - Tests de Contrato", nombre del caso, estado
+- Páginas por petición: método, URL, body enviado, código HTTP, respuesta JSON
+
+El reporte HTML (Mochawesome) incluye todos los tests en `test-results/html-report/index.html`.
 
 ## Ejecución
 
 ```bash
-# Todos los tests (Smoke + API) - inicia mock automáticamente
-npm test
-
-# Solo API (con mock)
+# Solo API (recomendado) - inicia mock y ejecuta tests
 npm run test:api
 
-# Solo Smoke (sin mock)
-npm run test:smoke
-
-# Iniciar mock manualmente (otra terminal)
+# Mock manual (en otra terminal)
 npm run mock:api
+
+# Suite completa (Smoke + API)
+npm test
+```
+
+`npm run test:api` usa `scripts/run-api-tests.js` para iniciar el mock, esperar que esté listo y ejecutar Cypress. Al finalizar, cierra el mock correctamente (compatible con Windows 11, sin depender de wmic).
+
+## Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  npm run test:api                                                │
+│  scripts/run-api-tests.js                                        │
+└─────────────────────────┬───────────────────────────────────────┘
+                          │
+         ┌────────────────┴────────────────┐
+         ▼                                 ▼
+┌─────────────────────┐          ┌─────────────────────────────┐
+│  server/            │          │  cypress run                 │
+│  mock-reqres.js     │◄─────────│  cypress/e2e/api/            │
+│  localhost:4545     │  HTTP    │  reqres-users.cy.js          │
+└─────────────────────┘          └──────────────┬──────────────┘
+                                               │
+                                               │ cy.requestAndRecord()
+                                               ▼
+                                    ┌─────────────────────────────┐
+                                    │  recordApiStep → PDF report │
+                                    │  test-results/pdf-reports/  │
+                                    └─────────────────────────────┘
+```
+
+## Uso del comando requestAndRecord
+
+En lugar de `cy.request()` directo, usar `cy.requestAndRecord()` para que cada petición quede documentada en el PDF:
+
+```javascript
+cy.requestAndRecord('POST /users', {
+  method: 'POST',
+  url: `${API_BASE}/users`,
+  body: { name: 'Test User', job: 'Automation Engineer' },
+  failOnStatusCode: false
+}).then((response) => {
+  expect(response.status).to.eq(201);
+  // ...
+});
 ```
